@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"deploy-platform-go/internal/project"
 	"encoding/json"
 	"flag"
 	"github.com/moby/moby/api/types/build"
@@ -26,20 +27,7 @@ func main() {
 	pathArg := flag.String("path", ".", "path to project")
 	flag.Parse()
 
-	absPath, err := filepath.Abs(*pathArg)
-	if err != nil {
-		log.Fatalf("could not resolve path %q: %v", *pathArg, err)
-	}
-
-	log.Printf("path=%q", absPath)
-
-	info, err := os.Stat(absPath)
-	if err != nil {
-		log.Fatalf("invalid -path %q: %v", absPath, err)
-	}
-	if !info.IsDir() {
-		log.Fatalf("-path %q is not a directory", absPath)
-	}
+	absPath, err := project.Resolve(*pathArg)
 
 	// Check if there is a valid dockerfile in it
 
