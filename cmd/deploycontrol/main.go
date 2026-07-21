@@ -30,16 +30,9 @@ func main() {
 	absPath, err := project.Resolve(*pathArg)
 
 	// Check if there is a valid dockerfile in it
-
-	dockerfilePath := filepath.Join(absPath, "Dockerfile")
-	dfInfo, err := os.Stat(dockerfilePath)
-
+	_, err = project.FindDockerfile(absPath)
 	if err != nil {
-		log.Fatalf("no Dockerfile file found at %q: %v", dockerfilePath, err)
-	}
-
-	if dfInfo.IsDir() {
-		log.Fatalf("%q is a directory")
+		log.Fatalf("%v", err)
 	}
 
 	// Files are there, go and start sdk now

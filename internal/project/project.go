@@ -2,6 +2,7 @@ package project
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -26,6 +27,18 @@ func Resolve(pathArg string) (absPath string, err error) {
 	return absPath, nil
 }
 
-//func FindDockerfile(dir string) (io.Reader, error) {
-//
-//}
+// FindDockerfile returns absolute path to Dockerfile
+func FindDockerfile(dir string) (string, error) {
+	dockerfilePath := filepath.Join(dir, "Dockerfile")
+	dfInfo, err := os.Stat(dockerfilePath)
+
+	if err != nil {
+		log.Fatalf("no Dockerfile file found at %q: %v", dockerfilePath, err)
+	}
+
+	if dfInfo.IsDir() {
+		log.Fatalf("%q is a directory")
+	}
+
+	return dockerfilePath, nil
+}
