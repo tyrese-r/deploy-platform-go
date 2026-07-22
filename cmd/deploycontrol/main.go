@@ -1,9 +1,8 @@
 package main
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
+	"deploy-platform-go/internal/dockerimage"
 	"deploy-platform-go/internal/project"
 	"encoding/json"
 	"flag"
@@ -13,11 +12,9 @@ import (
 	"github.com/moby/moby/api/types/network"
 	"github.com/moby/moby/client"
 	"github.com/moby/moby/client/pkg/jsonmessage"
-	"io"
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 )
 
@@ -47,7 +44,7 @@ func main() {
 
 	// Now build the image
 
-	buildCtx, err := createBuildContext(absPath)
+	buildCtx, err := dockerimage.Context(absPath)
 	buildResp, err := apiClient.ImageBuild(ctx, buildCtx, client.ImageBuildOptions{
 		Dockerfile: "Dockerfile",
 	})
@@ -56,7 +53,7 @@ func main() {
 	}
 	defer buildResp.Body.Close()
 
-	// Get imag
+	// Get imageID
 	var imageID string
 	err = jsonmessage.DisplayJSONMessagesStream(buildResp.Body, os.Stdout, os.Stdout.Fd(), false,
 		func(msg jsonstream.Message) {
@@ -136,41 +133,4 @@ func main() {
 		log.Printf("could not remove container: %v", err)
 	}
 
-}
-
-// Claude Opus 4.8
-func createBuildContext(dir string) (io.Reader, error) {
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
-
-	err := filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if fi.IsDir() {
-			return nil
-		}
-		rel, err := filepath.Rel(dir, path)
-		if err != nil {
-			return err
-		}
-		hdr, err := tar.FileInfoHeader(fi, "")
-		if err != nil {
-			return err
-		}
-		hdr.Name = rel
-
-		if err := tw.WriteHeader(hdr); err != nil {
-			return err
-		}
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = io.Copy(tw, f)
-		return err
-	})
-	return buf, err
 }
